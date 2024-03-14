@@ -41,6 +41,7 @@ type Runner struct {
 	all     bool
 	quiet   bool
 	plgn    Plugin
+	keepAlive time.Duration
 }
 
 func (r *Runner) logEntry(ctx context.Context) *logger.Entry {
@@ -147,6 +148,16 @@ func (r *Runner) runOnce(ctx context.Context, m map[string]events.Action) (err e
 
 func (r *Runner) Run(ctx context.Context, m map[string]events.Action) (err error) {
 	log := r.logEntry(ctx)
+
+	if r.keepAlive != 0 {
+		timeout := time.After(r.keepAlive)
+		go func() {
+			<-timeout
+			log.Info("keepalive expired, bye bye")
+			os.Exit(0)
+		}()
+	}
+
 	var shutdown bool
 	for err, shutdown = r.runOnce(ctx, m); r.loop && !shutdown; {
 		log.Debug("restart loop")
@@ -222,6 +233,13 @@ func WithLogger(l *logger.Logger) Option {
 func WithSleep(d time.Duration) Option {
 	return func(r *Runner) error {
 		r.sleep = d
+		return nil
+	}
+}
+
+func WithKeepAlive(d time.Duration) Option {
+	return func(r *Runner) error {
+		r.keepAlive = d
 		return nil
 	}
 }

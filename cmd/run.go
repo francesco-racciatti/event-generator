@@ -63,6 +63,7 @@ Without arguments it runs all actions, otherwise only those actions matching the
 	flags := c.Flags()
 
 	flags.Duration("sleep", time.Millisecond*100, "The length of time to wait before running an action. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means no sleep.")
+	flags.Duration("keepalive", 0, "The length of time to keep the event-geneartor alive before exiting. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means infinite.")
 	flags.Bool("loop", false, "Run in a loop")
 	flags.Bool("all", false, "Run all actions, including those disabled by default")
 
@@ -83,6 +84,10 @@ Without arguments it runs all actions, otherwise only those actions matching the
 			return err
 		}
 		sleep, err := flags.GetDuration("sleep")
+		if err != nil {
+			return err
+		}
+		keepAlive, err := flags.GetDuration("keepalive")
 		if err != nil {
 			return err
 		}
@@ -112,6 +117,7 @@ Without arguments it runs all actions, otherwise only those actions matching the
 			runner.WithSleep(sleep),
 			runner.WithLoop(loop),
 			runner.WithAllEnabled(all),
+			runner.WithKeepAlive(keepAlive),
 		}
 
 		// allow to override runOpts by appending given options
